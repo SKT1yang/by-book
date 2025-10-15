@@ -1,0 +1,13 @@
+# Rust target directory
+target/
+
+# Cargo.lock is usually included for binary crates, but excluded for libraries
+# We'll include it for this project since it's a binary
+# Cargo.lock
+
+# IDE specific files
+*.rs.bk
+
+# Sample text files
+sample.txt
+large_sample.txt
