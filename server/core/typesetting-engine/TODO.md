@@ -151,3 +151,101 @@
 - 大文档处理性能测试
 - 缓存机制效果测试
 - 内存使用情况监控
+
+## 设计文档
+
+### 文本测量系统架构
+
+```rust
+/// 抽象文本测量接口
+trait TextMeasurer {
+    /// 测量文本尺寸
+    fn measure_text(&self, text: &str, style: &TextStyle) -> LayoutMetrics;
+    
+    /// 测量内容块尺寸
+    fn measure_block(&self, block: &ContentBlock) -> LayoutMetrics;
+}
+
+/// 基于系统字体的真实文本测量实现
+struct SystemTextMeasurer {
+    // 字体缓存
+    font_cache: HashMap<String, Font>,
+    // 测量缓存
+    measurement_cache: HashMap<TextMeasurementKey, LayoutMetrics>,
+}
+
+impl TextMeasurer for SystemTextMeasurer {
+    fn measure_text(&self, text: &str, style: &TextStyle) -> LayoutMetrics {
+        // 实际的文本测量逻辑
+        // 1. 获取字体信息
+        // 2. 计算每个字符的宽度
+        // 3. 计算总宽度和高度
+        // 4. 考虑行高、字间距等参数
+    }
+}
+```
+
+### 换行算法设计
+
+```rust
+/// 文本换行器
+struct TextWrapper {
+    /// 容器宽度
+    container_width: f32,
+    /// 文本测量器
+    measurer: Box<dyn TextMeasurer>,
+}
+
+impl TextWrapper {
+    /// 根据宽度对文本进行换行
+    fn wrap_text(&self, text: &str, style: &TextStyle) -> Vec<String> {
+        // 实现智能换行算法
+        // 1. 按空格分割单词
+        // 2. 逐个添加单词并测量行宽
+        // 3. 超出宽度时换行
+        // 4. 处理长单词的特殊换行
+    }
+}
+```
+
+### 缓存机制设计
+
+```rust
+/// 测量缓存键
+#[derive(Hash, PartialEq, Eq)]
+struct TextMeasurementKey {
+    text: String,
+    font_family: String,
+    font_size: f32,
+    bold: bool,
+    italic: bool,
+}
+
+/// 带缓存的文本测量器
+struct CachedTextMeasurer {
+    inner: SystemTextMeasurer,
+    cache: HashMap<TextMeasurementKey, LayoutMetrics>,
+}
+
+impl TextMeasurer for CachedTextMeasurer {
+    fn measure_text(&self, text: &str, style: &TextStyle) -> LayoutMetrics {
+        let key = TextMeasurementKey {
+            text: text.to_string(),
+            font_family: style.font_family.clone(),
+            font_size: style.font_size,
+            bold: style.bold,
+            italic: style.italic,
+        };
+        
+        // 先尝试从缓存获取
+        if let Some(metrics) = self.cache.get(&key) {
+            return metrics.clone();
+        }
+        
+        // 缓存未命中，进行实际测量
+        let metrics = self.inner.measure_text(text, style);
+        self.cache.insert(key, metrics.clone());
+        metrics
+    }
+}
+```
