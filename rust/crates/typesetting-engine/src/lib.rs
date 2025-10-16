@@ -14,7 +14,7 @@
 mod document;
 mod parser;
 mod layout;
-mod renderer;
+// 移除渲染器模块，因为渲染应该由各个平台自己实现
 
 // 测试模块
 #[cfg(test)]
@@ -23,13 +23,12 @@ mod document_test;
 mod parser_test;
 #[cfg(test)]
 mod layout_test;
-#[cfg(test)]
-mod renderer_test;
+// 移除渲染器测试模块
 
 pub use document::*;
 pub use parser::*;
 pub use layout::*;
-pub use renderer::*;
+// 移除渲染器的导出
 
 /// 预导入模块
 /// 

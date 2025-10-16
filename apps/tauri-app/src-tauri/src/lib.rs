@@ -6,7 +6,7 @@ fn greet(name: &str) -> String {
 
 #[tauri::command]
 fn typeset_document(content: &str) -> Result<String, String> {
-    use typesetting_engine::{ParserEngine, LayoutEngine, Renderer, PageConfig};
+    use typesetting_engine::{ParserEngine, LayoutEngine, PageConfig, Page};
     
     // 创建解析引擎
     let parser = ParserEngine::new();
@@ -26,15 +26,42 @@ fn typeset_document(content: &str) -> Result<String, String> {
     let layout_engine = LayoutEngine::new(page_config);
     
     // 布局文档
-    let pages = layout_engine.layout_document(&document);
+    let pages: Vec<Page> = layout_engine.layout_document(&document);
     
-    // 创建渲染器
-    let renderer = Renderer::new();
-    
-    // 渲染页面
-    let rendered = renderer.render_pages(&pages);
+    // 在Tauri应用中实现自己的渲染逻辑
+    let rendered = render_pages_for_tauri(&pages);
     
     Ok(rendered)
+}
+
+/// 为Tauri应用实现的渲染函数
+fn render_pages_for_tauri(pages: &[typesetting_engine::Page]) -> String {
+    let mut result = String::new();
+    for (i, page) in pages.iter().enumerate() {
+        result.push_str(&format!("Page {}: \n", i + 1));
+        result.push_str("--- Page Start ---\n");
+        
+        // 遍历页面中的所有内容块
+        for block in &page.blocks {
+            match block.block_type {
+                typesetting_engine::ContentBlockType::Text => {
+                    result.push_str(&format!("Text: {}\n", block.content));
+                }
+                typesetting_engine::ContentBlockType::Title => {
+                    result.push_str(&format!("Title: {}\n", block.content));
+                }
+                typesetting_engine::ContentBlockType::Image => {
+                    result.push_str(&format!("Image: {}\n", block.content));
+                }
+                typesetting_engine::ContentBlockType::Blank => {
+                    result.push('\n');
+                }
+            }
+        }
+        
+        result.push_str("--- Page End ---\n\n");
+    }
+    result
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

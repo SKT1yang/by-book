@@ -2,7 +2,7 @@
 //! 
 //! 测试大文档的分页功能
 
-use typesetting_engine::{ParserEngine, LayoutEngine, Renderer, PageConfig};
+use typesetting_engine::{ParserEngine, LayoutEngine, PageConfig};
 
 /// 测试大文档的分页功能
 /// 
@@ -48,11 +48,4 @@ fn test_large_document_pagination() {
     for (i, page) in pages.iter().enumerate() {
         assert!(!page.blocks.is_empty(), "第{}页不应该为空", i + 1);
     }
-    
-    // Render
-    let renderer = Renderer::new();
-    let rendered = renderer.render_pages(&pages);
-    
-    assert!(rendered.contains("--- Page Start ---"));
-    assert!(rendered.contains("--- Page End ---"));
 }

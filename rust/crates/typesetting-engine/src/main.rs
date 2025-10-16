@@ -2,7 +2,7 @@
 //! 
 //! 演示如何使用自研排版引擎处理文档
 
-use typesetting_engine::{ParserEngine, LayoutEngine, Renderer, PageConfig};
+use typesetting_engine::{ParserEngine, LayoutEngine, PageConfig};
 use anyhow::Result;
 use std::fs;
 
@@ -12,7 +12,7 @@ use std::fs;
 /// 1. 从文件读取内容
 /// 2. 解析文档
 /// 3. 布局计算
-/// 4. 渲染输出
+/// 4. 渲染输出（这里只输出布局数据）
 fn main() -> Result<()> {
     // 从文件读取内容
     let content = fs::read_to_string("large_sample.txt")?;
@@ -44,12 +44,15 @@ fn main() -> Result<()> {
     let pages = layout_engine.layout_document(&document);
     println!("\nLayout completed: {} pages generated", pages.len());
     
-    // 创建渲染器
-    let renderer = Renderer::new();
-    
-    // 渲染页面
-    let rendered = renderer.render_pages(&pages);
-    println!("\nRendered output:\n{}", rendered);
+    // 输出布局数据，而不是渲染后的内容
+    for (i, page) in pages.iter().enumerate() {
+        println!("\n--- Page {} ---", i + 1);
+        println!("Used height: {}", page.used_height);
+        println!("Blocks: {}", page.blocks.len());
+        for (j, block) in page.blocks.iter().enumerate() {
+            println!("  Block {}: {:?} - {}", j + 1, block.block_type, block.content);
+        }
+    }
     
     Ok(())
 }

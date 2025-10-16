@@ -4163,10 +4163,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
- "js-sys",
  "thiserror 1.0.69",
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]
