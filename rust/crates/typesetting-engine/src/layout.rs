@@ -109,10 +109,22 @@ impl LayoutEngine {
                     }
                     current_page = self.create_empty_page();
                     
-                    // 添加块到新页
-                    current_page.used_height += block_metrics.height;
-                    current_page.blocks.push(block.clone());
+                    // 如果块太大无法适应空页面，需要拆分内容
+                    if block_metrics.height > self.page_config.content_height() {
+                        // 对于过大的块进行拆分处理
+                        self.layout_large_block(block, &mut pages);
+                    } else {
+                        // 添加块到新页
+                        current_page.used_height += block_metrics.height;
+                        current_page.blocks.push(block.clone());
+                    }
                 }
+            }
+            
+            // 在章节之间添加分页（如果当前页已经有内容）
+            if !current_page.blocks.is_empty() && current_page.used_height > 0.0 {
+                pages.push(current_page);
+                current_page = self.create_empty_page();
             }
         }
         
@@ -122,6 +134,38 @@ impl LayoutEngine {
         }
         
         pages
+    }
+    
+    /// 处理过大的内容块
+    /// 
+    /// 当内容块太大无法适应单页时，将其拆分成多个较小的块
+    /// 
+    /// # Arguments
+    /// 
+    /// * `block` - 需要拆分的内容块
+    /// * `pages` - 页面列表的可变引用
+    fn layout_large_block(&self, block: &ContentBlock, pages: &mut Vec<Page>) {
+        // 按行拆分内容
+        let lines: Vec<&str> = block.content.lines().collect();
+        let lines_per_page = (self.page_config.content_height() / (block.styles.font_size * 1.2)) as usize;
+        
+        // 分批处理行
+        for chunk in lines.chunks(lines_per_page) {
+            let mut new_page = self.create_empty_page();
+            let chunk_content = chunk.join("\n");
+            
+            let new_block = ContentBlock {
+                block_type: block.block_type.clone(),
+                content: chunk_content,
+                styles: block.styles.clone(),
+                metrics: None,
+            };
+            
+            let block_metrics = self.measure_block(&new_block);
+            new_page.used_height = block_metrics.height;
+            new_page.blocks.push(new_block);
+            pages.push(new_page);
+        }
     }
     
     /// 创建空页面

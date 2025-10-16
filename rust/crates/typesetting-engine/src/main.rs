@@ -15,7 +15,7 @@ use std::fs;
 /// 4. 渲染输出（这里只输出布局数据）
 fn main() -> Result<()> {
     // 从文件读取内容
-    let content = fs::read_to_string("large_sample.txt")?;
+    let content = fs::read_to_string("《玄鉴仙族》.txt")?;
     
     // 创建解析引擎
     let parser = ParserEngine::new();
@@ -44,14 +44,25 @@ fn main() -> Result<()> {
     let pages = layout_engine.layout_document(&document);
     println!("\nLayout completed: {} pages generated", pages.len());
     
-    // 输出布局数据，而不是渲染后的内容
-    for (i, page) in pages.iter().enumerate() {
+    // 输出前几页布局数据，而不是渲染后的内容
+    let pages_to_show = pages.len().min(3); // 只显示前3页
+    for (i, page) in pages.iter().enumerate().take(pages_to_show) {
         println!("\n--- Page {} ---", i + 1);
         println!("Used height: {}", page.used_height);
         println!("Blocks: {}", page.blocks.len());
         for (j, block) in page.blocks.iter().enumerate() {
-            println!("  Block {}: {:?} - {}", j + 1, block.block_type, block.content);
+            // 只显示内容的前100个字符以避免输出过多，确保在字符边界上截断
+            let content_preview = if block.content.chars().count() > 100 {
+                block.content.chars().take(100).collect::<String>() + "..."
+            } else {
+                block.content.clone()
+            };
+            println!("  Block {}: {:?} - {}", j + 1, block.block_type, content_preview);
         }
+    }
+    
+    if pages.len() > pages_to_show {
+        println!("\n... and {} more pages", pages.len() - pages_to_show);
     }
     
     Ok(())
