@@ -36,14 +36,21 @@ impl ParserEngine {
         // 按段落分割内容（两个换行符分隔）
         let paragraphs: Vec<&str> = content.split("\n\n").collect();
         
+        // 章节列表
         let mut chapters = Vec::new();
+
+        // 当前章节的文本块列表
         let mut blocks = Vec::new();
         
         // 默认样式
         let default_style = TextStyle {
+            // 字体大小
             font_size: 16.0,
+            // 字体名称
             font_family: "Arial".to_string(),
+            // 粗体
             bold: false,
+            // 斜体
             italic: false,
         };
         

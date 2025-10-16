@@ -1,9 +1,0 @@
-[package]
-name = "epub"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-zip = { workspace = true }
-nom = { workspace = true }
-tempfile = { workspace = true }
