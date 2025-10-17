@@ -22,11 +22,197 @@
   text-align: center;
 }
 
-h1 {
+/* 书架页面样式 */
+.bookshelf {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.bookshelf h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.bookshelf-actions {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.book-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.book-item {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+.book-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.book-cover {
+  width: 100%;
+  height: 200px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.book-title {
+  font-size: 14px;
+  font-weight: bold;
+  word-break: break-all;
+}
+
+/* 阅读器页面样式 */
+.reader {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f6f6f6;
+  color: #333;
+}
+
+.reader.dark {
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+}
+
+.reader-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #fff;
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.reader.dark .reader-header {
+  background-color: #333;
+  border-bottom: 1px solid #555;
+}
+
+.reader-header h2 {
+  margin: 0;
+  font-size: 18px;
+  flex-grow: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
+.reader-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.reader-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  font-size: 16px;
+  line-height: 1.6;
+  scroll-behavior: smooth;
+}
+
+.reader-content pre {
+  white-space: pre-wrap;
+  font-family: "Microsoft YaHei", sans-serif;
+  margin: 0;
+}
+
+.reader-footer {
+  padding: 10px 20px;
+  background-color: #fff;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reader.dark .reader-footer {
+  background-color: #333;
+  border-top: 1px solid #555;
+}
+
+.reader-footer button {
+  min-width: 80px;
+}
+
+/* 数据结构信息组件样式 */
+.data-structure-info {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.data-structure-info h3 {
+  margin-top: 0;
+}
+
+.structure-list {
+  text-align: left;
+  font-family: monospace;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.structure-item {
+  padding: 2px 0;
+}
+
+/* 深色模式下的数据结构信息 */
+.reader.dark .data-structure-info {
+  background-color: #2a2a2a;
+  border-color: #555;
+}
+
+.reader.dark .structure-list {
+  background-color: #1e1e1e;
+}
+
+/* 错误消息样式 */
+.error-message {
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.reader-error {
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 20px;
+  border-radius: 4px;
+  margin: 20px;
   text-align: center;
 }
 
-input,
+/* 按钮样式 */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -38,18 +224,25 @@ button {
   background-color: #ffffff;
   transition: border-color 0.25s;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
 }
 
-button {
-  cursor: pointer;
+.reader.dark button {
+  color: #ffffff;
+  background-color: #0f0f0f98;
 }
 
 button:hover {
   border-color: #396cd8;
 }
+
 button:active {
   border-color: #396cd8;
   background-color: #e8e8e8;
+}
+
+.reader.dark button:active {
+  background-color: #0f0f0f69;
 }
 
 input,
