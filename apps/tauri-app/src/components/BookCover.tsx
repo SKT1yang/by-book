@@ -6,8 +6,18 @@ interface BookCoverProps {
   onClick?: () => void;
 }
 
+/**
+ * 书籍封面组件
+ * 
+ * 显示书籍封面，如果没有封面则显示默认封面
+ * 默认封面基于书名首字符生成，并配以个性化颜色
+ */
 const BookCover: React.FC<BookCoverProps> = ({ title, coverPath, onClick }) => {
-  // 从书名提取首字母或汉字首字符作为默认封面文字
+  /**
+   * 从书名提取首字母或汉字首字符作为默认封面文字
+   * @param bookTitle 书籍标题
+   * @returns 封面显示的文字
+   */
   const getCoverText = (bookTitle: string) => {
     // 移除空白字符和特殊符号
     const cleanTitle = bookTitle.trim().replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
@@ -24,7 +34,11 @@ const BookCover: React.FC<BookCoverProps> = ({ title, coverPath, onClick }) => {
     return firstChar.toUpperCase();
   };
 
-  // 生成随机背景色，但保持一致性（相同书名始终是相同颜色）
+  /**
+   * 生成随机背景色，但保持一致性（相同书名始终是相同颜色）
+   * @param bookTitle 书籍标题
+   * @returns CSS颜色字符串
+   */
   const getBackgroundColor = (bookTitle: string) => {
     // 基于书名生成哈希值
     let hash = 0;

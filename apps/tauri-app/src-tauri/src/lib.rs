@@ -170,6 +170,41 @@ fn load_document(app_handle: tauri::AppHandle, filename: &str) -> Result<String,
 }
 
 #[tauri::command]
+fn delete_document(app_handle: tauri::AppHandle, filename: &str, delete_file: bool) -> Result<String, String> {
+    use std::fs;
+    use tauri::Manager;
+    
+    // 获取应用数据目录
+    let app_dir = app_handle.path().app_data_dir()
+        .map_err(|e| format!("无法获取应用数据目录: {}", e))?;
+    
+    // 构建文件路径
+    let file_path = app_dir.join("documents").join(filename);
+    println!("正在尝试删除文件: {:?}", file_path);
+    
+    // 从书架移除（无论是否删除本地文件）
+    // 这里我们只是从UI上移除，实际上不需要做任何操作
+    
+    // 如果需要删除本地文件
+    if delete_file {
+        match fs::remove_file(&file_path) {
+            Ok(_) => {
+                println!("文件删除成功: {:?}", file_path);
+                Ok(format!("文件已从书架移除并删除本地文件: {}", filename))
+            }
+            Err(e) => {
+                println!("文件删除失败: {:?}", e);
+                Err(format!("无法删除文件 '{}': {}", filename, e))
+            }
+        }
+    } else {
+        // 只是从书架移除，不删除本地文件
+        println!("文件已从书架移除，但保留本地文件: {:?}", file_path);
+        Ok(format!("文件已从书架移除，但保留本地文件: {}", filename))
+    }
+}
+
+#[tauri::command]
 fn list_documents(app_handle: tauri::AppHandle) -> Result<Vec<String>, String> {
     use std::fs;
     use tauri::Manager;
@@ -277,6 +312,7 @@ pub fn run() {
             typeset_document,
             save_document,
             load_document,
+            delete_document,
             list_documents,
             get_app_data_structure
         ])

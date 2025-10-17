@@ -67,6 +67,10 @@ impl FileLoader {
     /// # Returns
     /// 
     /// 返回文件内容的UTF-8字符串表示
+    /// 
+    /// # Errors
+    /// 
+    /// 当文件无法读取时返回错误
     pub fn load_text_file(&self, file_path: &str) -> Result<String> {
         use std::fs;
         
@@ -80,6 +84,7 @@ impl FileLoader {
             },
             Err(_) => {
                 // 如果UTF-8读取失败，使用Latin-1编码作为后备
+                // Latin-1编码是一种单字节编码，可以无损地表示所有256个字节值
                 let content = bytes.iter().map(|&b| b as char).collect();
                 Ok(content)
             }
@@ -97,6 +102,10 @@ impl FileLoader {
     /// # Returns
     /// 
     /// 返回解析后的文档模型
+    /// 
+    /// # Errors
+    /// 
+    /// 当文件无法读取或解析时返回错误
     pub fn load_and_parse_document(&self, file_path: &str) -> Result<crate::DocumentModel> {
         use crate::ParserEngine;
         

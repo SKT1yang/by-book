@@ -12,6 +12,7 @@
     "fs:allow-mkdir",
     "fs:allow-open",
     "fs:allow-read-text-file",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "dialog:allow-confirm"
   ]
 }

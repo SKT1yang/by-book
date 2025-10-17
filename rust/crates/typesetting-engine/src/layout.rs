@@ -147,6 +147,7 @@ impl LayoutEngine {
     fn layout_large_block(&self, block: &ContentBlock, pages: &mut Vec<Page>) {
         // 按行拆分内容
         let lines: Vec<&str> = block.content.lines().collect();
+        // 计算每页可以容纳的行数（基于字体大小和行高）
         let lines_per_page = (self.page_config.content_height() / (block.styles.font_size * 1.2)) as usize;
         
         // 分批处理行
@@ -194,7 +195,8 @@ impl LayoutEngine {
     pub fn measure_block(&self, block: &ContentBlock) -> LayoutMetrics {
         // 简化的测量逻辑 - 实际应该基于字体、文本内容等计算
         let lines = block.content.lines().count().max(1) as f32;
-        let height = lines * block.styles.font_size * 1.2; // 行高1.2倍
+        // 使用字体大小和行高（1.2倍）计算高度
+        let height = lines * block.styles.font_size * 1.2; 
         
         LayoutMetrics {
             width: self.page_config.content_width(),

@@ -26,6 +26,10 @@ const Reader: React.FC = () => {
     }
   }, [filename]);
 
+  /**
+   * 加载文档内容
+   * @param filename - 要加载的文件名
+   */
   async function loadDocument(filename: string) {
     try {
       setLoading(true);
@@ -44,7 +48,10 @@ const Reader: React.FC = () => {
     }
   }
 
-  // 处理排版结果
+  /**
+   * 处理排版结果
+   * @param result - 排版引擎返回的结果
+   */
   function processTypesetResult(result: string) {
     // 解析排版引擎返回的结果
     const pageSections = result.split('\n\n').filter(section => section.trim() !== '');

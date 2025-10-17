@@ -8,6 +8,7 @@ import BookCover from "./BookCover";
 const Bookshelf: React.FC = () => {
   const [documents, setDocuments] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showActions, setShowActions] = useState<string | null>(null); // 用于跟踪哪个书籍的操作菜单应该显示
   const navigate = useNavigate();
 
   // 组件加载时获取文档列表
@@ -61,6 +62,27 @@ const Bookshelf: React.FC = () => {
     }
   }
 
+  // 删除书籍
+  async function deleteDocument(filename: string) {
+    try {
+      setErrorMessage(""); // 清除之前的错误信息
+      
+      // 直接删除，不需要弹窗确认
+      const result = await invoke("delete_document", { 
+        filename: filename, 
+        deleteFile: true // 直接删除文件
+      });
+      
+      console.log("删除书籍结果:", result);
+      
+      // 刷新文档列表
+      await loadDocuments();
+    } catch (error) {
+      console.error("删除书籍失败:", error);
+      setErrorMessage("删除书籍失败: " + error);
+    }
+  }
+
   // 打开阅读器
   const openReader = (filename: string) => {
     navigate(`/reader/${filename}`);
@@ -86,12 +108,32 @@ const Bookshelf: React.FC = () => {
           <p>书架暂无书籍，请添加书籍</p>
         ) : (
           documents.map((doc) => (
-            <div key={doc} className="book-item">
+            <div 
+              key={doc} 
+              className="book-item"
+              onMouseEnter={() => setShowActions(doc)}
+              onMouseLeave={() => setShowActions(null)}
+            >
               <BookCover 
                 title={doc} 
                 onClick={() => openReader(doc)} 
               />
               <div className="book-title">{doc}</div>
+              
+              {/* 操作按钮，悬停时显示 */}
+              {showActions === doc && (
+                <div className="book-actions">
+                  <button 
+                    className="action-button delete-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteDocument(doc);
+                    }}
+                  >
+                    删除
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}

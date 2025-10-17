@@ -58,12 +58,14 @@ impl ParserEngine {
             italic: false,
         };
         
-        // 章节标题的正则表达式
-        let chapter_regex = Regex::new(r"^第[一二三四五六七八九十百千\d]+章").unwrap();
+        // 章节标题的正则表达式 - 使用 lazy_static 避免重复编译
+        lazy_static::lazy_static! {
+            static ref CHAPTER_REGEX: Regex = Regex::new(r"^第[一二三四五六七八九十百千\d]+章").unwrap();
+        }
         
         for line in lines.iter() {
             // 检查是否为章节标题
-            if line.starts_with("# ") || chapter_regex.is_match(line.trim()) {
+            if line.starts_with("# ") || CHAPTER_REGEX.is_match(line.trim()) {
                 // 如果有累积的段落内容，添加到当前章节
                 if !current_paragraph.is_empty() {
                     let block = ContentBlock {
