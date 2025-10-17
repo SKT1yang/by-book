@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
 import { open } from '@tauri-apps/plugin-dialog';
 import { readTextFile } from '@tauri-apps/plugin-fs';
+import BookCover from "./BookCover";
 
 const Bookshelf: React.FC = () => {
   const [documents, setDocuments] = useState<string[]>([]);
@@ -85,10 +86,12 @@ const Bookshelf: React.FC = () => {
           <p>书架暂无书籍，请添加书籍</p>
         ) : (
           documents.map((doc) => (
-            <div key={doc} className="book-item" onClick={() => openReader(doc)}>
-              <div className="book-cover">
-                <div className="book-title">{doc}</div>
-              </div>
+            <div key={doc} className="book-item">
+              <BookCover 
+                title={doc} 
+                onClick={() => openReader(doc)} 
+              />
+              <div className="book-title">{doc}</div>
             </div>
           ))
         )}

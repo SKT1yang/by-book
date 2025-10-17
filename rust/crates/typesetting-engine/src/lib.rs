@@ -9,11 +9,13 @@
 //! - [document] - 文档模型定义
 //! - [parser] - 解析引擎
 //! - [layout] - 布局引擎
+//! - [file_loader] - 文件加载器
 //! - [renderer] - 渲染引擎
 
 mod document;
 mod parser;
 mod layout;
+mod file_loader;
 // 移除渲染器模块，因为渲染应该由各个平台自己实现
 
 // 测试模块
@@ -28,6 +30,7 @@ mod layout_test;
 pub use document::*;
 pub use parser::*;
 pub use layout::*;
+pub use file_loader::*;
 // 移除渲染器的导出
 
 /// 预导入模块

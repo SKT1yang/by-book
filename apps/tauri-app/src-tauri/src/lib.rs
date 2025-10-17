@@ -16,12 +16,12 @@ fn typeset_document(content: &str) -> Result<String, String> {
     
     // 创建布局引擎
     let page_config = PageConfig {
-        width: 400.0,
-        height: 600.0,
-        margin_top: 20.0,
-        margin_bottom: 20.0,
-        margin_left: 20.0,
-        margin_right: 20.0,
+        width: 800.0,  // 增大页面宽度
+        height: 1000.0, // 增大页面高度
+        margin_top: 40.0,
+        margin_bottom: 40.0,
+        margin_left: 40.0,
+        margin_right: 40.0,
     };
     let layout_engine = LayoutEngine::new(page_config);
     
@@ -38,7 +38,7 @@ fn typeset_document(content: &str) -> Result<String, String> {
 fn render_pages_for_tauri(pages: &[typesetting_engine::Page]) -> String {
     let mut result = String::new();
     for (i, page) in pages.iter().enumerate() {
-        result.push_str(&format!("Page {}: \n", i + 1));
+        result.push_str(&format!("Page {}\n", i + 1));
         result.push_str("--- Page Start ---\n");
         
         // 遍历页面中的所有内容块
@@ -120,7 +120,8 @@ fn save_document(app_handle: tauri::AppHandle, filename: &str, content: &str) ->
     let file_path = docs_dir.join(filename);
     println!("准备保存文件到: {:?}", file_path);
     
-    match fs::write(&file_path, content) {
+    // 确保内容以UTF-8编码保存
+    match fs::write(&file_path, content.as_bytes()) {
         Ok(_) => {
             let message = format!("文件已保存到: {:?}", file_path);
             println!("{}", message);
@@ -144,8 +145,8 @@ fn save_document(app_handle: tauri::AppHandle, filename: &str, content: &str) ->
 
 #[tauri::command]
 fn load_document(app_handle: tauri::AppHandle, filename: &str) -> Result<String, String> {
-    use std::fs;
     use tauri::Manager;
+    use typesetting_engine::FileLoader;
     
     // 获取应用数据目录
     let app_dir = app_handle.path().app_data_dir()
@@ -155,10 +156,17 @@ fn load_document(app_handle: tauri::AppHandle, filename: &str) -> Result<String,
     let file_path = app_dir.join("documents").join(filename);
     println!("正在尝试读取文件: {:?}", file_path);
     
-    let content = fs::read_to_string(&file_path)
-        .map_err(|e| format!("无法读取文件: {}", e))?;
-    
-    Ok(content)
+    // 使用排版引擎的文件加载器加载文件
+    let loader = FileLoader::new();
+    match loader.load_text_file(file_path.to_str().unwrap_or("")) {
+        Ok(content) => {
+            println!("文件读取成功");
+            Ok(content)
+        }
+        Err(e) => {
+            Err(format!("无法读取文件: {}", e))
+        }
+    }
 }
 
 #[tauri::command]
