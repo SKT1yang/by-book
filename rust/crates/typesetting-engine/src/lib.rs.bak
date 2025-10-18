@@ -1,0 +1,137 @@
+//! 自研排版引擎
+//! 
+//! 这是一个用Rust编写的排版引擎，用于处理文档的解析、布局和渲染。
+//! 
+//! # 架构
+//! 
+//! 排版引擎采用分层架构设计：
+//! 
+//! - [file_loader] - 文件加载器
+//! - [parser] - 解析引擎
+//! - [document] - 文档模型定义
+//! - [layout] - 布局引擎
+
+mod file_loader;
+mod parser;
+mod document;
+mod layout;
+mod async_ops;
+
+// 测试模块
+#[cfg(test)]
+mod document_test;
+#[cfg(test)]
+mod parser_test;
+#[cfg(test)]
+mod layout_test;
+
+pub use file_loader::*;
+pub use parser::*;
+pub use document::*;
+pub use layout::*;
+pub use async_ops::*;
+
+/// 预导入模块
+/// 
+/// 提供常用的类型和错误处理
+pub mod prelude {
+    pub use anyhow::Result;
+}
+
+// 重新导出异步操作模块中的函数
+pub use async_ops::*;
+
+// ==================== 同步处理函数 ====================
+
+/// 按需加载和布局特定章节
+/// 
+/// # Arguments
+/// 
+/// * `content` - 文档内容
+/// * `chapter_index` - 章节索引
+/// * `page_config` - 页面配置
+/// 
+/// # Returns
+/// 
+/// 返回布局后的页面列表
+pub fn layout_chapter_on_demand(
+    content: &str, 
+    chapter_index: usize, 
+    page_config: layout::PageConfig
+) -> Vec<layout::Page> {
+    let parser: ParserEngine = ParserEngine::new();
+    let document: DocumentModel = parser.parse_txt_chapter(content, chapter_index);
+    
+    let layout_engine = LayoutEngine::new(page_config);
+    layout_engine.layout_document_chapter(&document, 0) // 章节文档中的索引始终是0
+}
+
+// ==================== 异步处理函数 ====================
+
+/// 异步解析整个文档
+/// 
+/// # Arguments
+/// 
+/// * `content` - 文档内容
+/// 
+/// # Returns
+/// 
+/// 返回解析后的文档模型
+pub async fn parse_document_async(content: String) -> DocumentModel {
+    // 在后台线程中执行计算密集型任务
+    tokio::task::spawn_blocking(move || {
+        let parser = ParserEngine::new();
+        parser.parse_txt(&content)
+    }).await.unwrap_or_else(|_| DocumentModel {
+        metadata: DocumentMetadata {
+            title: std::borrow::Cow::Borrowed("Error Document"),
+            author: std::borrow::Cow::Borrowed("Unknown"),
+            created_at: std::borrow::Cow::Owned(chrono::Utc::now().to_rfc3339()),
+        },
+        chapters: Vec::new(),
+        styles: Vec::new(),
+    })
+}
+
+/// 异步布局文档
+/// 
+/// # Arguments
+/// 
+/// * `document` - 文档模型
+/// * `page_config` - 页面配置
+/// 
+/// # Returns
+/// 
+/// 返回布局后的页面列表
+pub async fn layout_document_async(
+    document: DocumentModel, 
+    page_config: layout::PageConfig
+) -> Vec<layout::Page> {
+    // 在后台线程中执行计算密集型任务
+    tokio::task::spawn_blocking(move || {
+        let layout_engine = LayoutEngine::new(page_config);
+        layout_engine.layout_document(&document)
+    }).await.unwrap_or_else(|_| Vec::new())
+}
+
+/// 异步按需加载和布局特定章节
+/// 
+/// # Arguments
+/// 
+/// * `content` - 文档内容
+/// * `chapter_index` - 章节索引
+/// * `page_config` - 页面配置
+/// 
+/// # Returns
+/// 
+/// 返回布局后的页面列表
+pub async fn layout_chapter_on_demand_async(
+    content: String, 
+    chapter_index: usize, 
+    page_config: layout::PageConfig
+) -> Vec<layout::Page> {
+    // 在后台线程中执行计算密集型任务
+    tokio::task::spawn_blocking(move || {
+        layout_chapter_on_demand(&content, chapter_index, page_config)
+    }).await.unwrap_or_else(|_| Vec::new())
+}

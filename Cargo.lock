@@ -4317,6 +4317,7 @@ dependencies = [
  "lazy_static",
  "regex",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]
