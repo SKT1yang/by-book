@@ -6,17 +6,15 @@
 //! 
 //! 排版引擎采用分层架构设计：
 //! 
-//! - [document] - 文档模型定义
-//! - [parser] - 解析引擎
-//! - [layout] - 布局引擎
 //! - [file_loader] - 文件加载器
-//! - [renderer] - 渲染引擎
+//! - [parser] - 解析引擎
+//! - [document] - 文档模型定义
+//! - [layout] - 布局引擎
 
-mod document;
-mod parser;
-mod layout;
 mod file_loader;
-// 移除渲染器模块，因为渲染应该由各个平台自己实现
+mod parser;
+mod document;
+mod layout;
 
 // 测试模块
 #[cfg(test)]
@@ -25,13 +23,11 @@ mod document_test;
 mod parser_test;
 #[cfg(test)]
 mod layout_test;
-// 移除渲染器测试模块
 
-pub use document::*;
-pub use parser::*;
-pub use layout::*;
 pub use file_loader::*;
-// 移除渲染器的导出
+pub use parser::*;
+pub use document::*;
+pub use layout::*;
 
 /// 预导入模块
 /// 

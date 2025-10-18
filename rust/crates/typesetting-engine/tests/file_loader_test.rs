@@ -55,7 +55,7 @@ fn test_load_and_parse_document() {
     
     // 验证文档结构
     assert!(!document.chapters.is_empty());
-    assert_eq!(document.chapters[0].title, "Chapter 1");
+    assert_eq!(document.chapters[0].title, "第一章 测试章节");
 }
 
 #[test]

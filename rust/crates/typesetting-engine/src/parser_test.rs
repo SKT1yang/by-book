@@ -74,4 +74,40 @@ mod tests {
         assert_eq!(document.chapters.len(), 2);
         assert!(!document.chapters[0].content.is_empty());
     }
+    
+    /// 测试中文数字章节标题解析
+    #[test]
+    fn test_chinese_numbered_chapters() {
+        let content = "第一页\n\n这是第一页的内容。\n\n第二页\n\n这是第二页的内容。";
+        let parser = ParserEngine::new();
+        let document = parser.parse_txt(content);
+        
+        // 对于不以#开头或不匹配正则表达式的文本，不应创建新章节
+        assert_eq!(document.chapters.len(), 1);
+        assert_eq!(document.chapters[0].title, "全文");
+    }
+    
+    /// 测试标准中文章节标题解析
+    #[test]
+    fn test_standard_chinese_chapters() {
+        let content = "第一章 简介\n\n这是第一章的内容。\n\n第二章 详细信息\n\n这是第二章的内容。";
+        let parser = ParserEngine::new();
+        let document = parser.parse_txt(content);
+        
+        assert_eq!(document.chapters.len(), 2);
+        assert_eq!(document.chapters[0].title, "第一章 简介");
+        assert_eq!(document.chapters[1].title, "第二章 详细信息");
+    }
+    
+    /// 测试混合格式章节标题
+    #[test]
+    fn test_mixed_format_chapters() {
+        let content = "# English Chapter\n\nContent of English chapter.\n\n第二章 中文标题\n\n中文章节内容。";
+        let parser = ParserEngine::new();
+        let document = parser.parse_txt(content);
+        
+        assert_eq!(document.chapters.len(), 2);
+        assert_eq!(document.chapters[0].title, "English Chapter");
+        assert_eq!(document.chapters[1].title, "第二章 中文标题");
+    }
 }
