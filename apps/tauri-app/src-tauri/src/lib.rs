@@ -17,7 +17,7 @@ fn parse_document_chapters(content: &str) -> Result<Vec<String>, String> {
     // 提取章节标题
     let chapter_titles: Vec<String> = document.chapters
         .iter()
-        .map(|chapter| chapter.title.clone())
+        .map(|chapter| chapter.title.to_string())
         .collect();
     
     Ok(chapter_titles)
@@ -57,7 +57,7 @@ fn typeset_document_with_chapter_info(content: &str) -> Result<(String, Vec<(Str
     
     for (index, chapter) in document.chapters.iter().enumerate() {
         let start_page = index * pages_per_chapter;
-        chapter_page_mapping.push((chapter.title.clone(), start_page));
+        chapter_page_mapping.push((chapter.title.to_string(), start_page));
     }
     
     // 在Tauri应用中实现自己的渲染逻辑

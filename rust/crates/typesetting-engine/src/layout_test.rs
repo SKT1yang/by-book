@@ -56,9 +56,9 @@ mod tests {
         
         let document = DocumentModel {
             metadata: DocumentMetadata {
-                title: "Test".to_string(),
-                author: "Author".to_string(),
-                created_at: "2023-01-01".to_string(),
+                title: "Test".into(),
+                author: "Author".into(),
+                created_at: "2023-01-01".into(),
             },
             chapters: vec![],
             styles: vec![],
@@ -84,27 +84,27 @@ mod tests {
         
         let style = TextStyle {
             font_size: 16.0,
-            font_family: "Arial".to_string(),
+            font_family: "Arial".into(),
             bold: false,
             italic: false,
         };
 
         let block = ContentBlock {
             block_type: ContentBlockType::Text,
-            content: "This is a test block.".to_string(),
+            content: "This is a test block.".into(),
             styles: style,
             metrics: None,
         };
 
         let document = DocumentModel {
             metadata: DocumentMetadata {
-                title: "Test".to_string(),
-                author: "Author".to_string(),
-                created_at: "2023-01-01".to_string(),
+                title: "Test".into(),
+                author: "Author".into(),
+                created_at: "2023-01-01".into(),
             },
             chapters: vec![Chapter {
-                id: "1".to_string(),
-                title: "Test Chapter".to_string(),
+                id: "1".into(),
+                title: "Test Chapter".into(),
                 content: vec![block],
             }],
             styles: vec![],
@@ -131,14 +131,14 @@ mod tests {
         
         let style = TextStyle {
             font_size: 16.0,
-            font_family: "Arial".to_string(),
+            font_family: "Arial".into(),
             bold: false,
             italic: false,
         };
 
         let block = ContentBlock {
             block_type: ContentBlockType::Text,
-            content: "Line 1\nLine 2\nLine 3".to_string(),
+            content: "Line 1\nLine 2\nLine 3".into(),
             styles: style,
             metrics: None,
         };

@@ -5,19 +5,20 @@
 #[cfg(test)]
 mod tests {
     use crate::document::*;
+    use std::borrow::Cow;
 
     /// 测试文档创建功能
     #[test]
     fn test_document_creation() {
         let metadata = DocumentMetadata {
-            title: "Test Document".to_string(),
-            author: "Test Author".to_string(),
-            created_at: "2023-01-01".to_string(),
+            title: Cow::Borrowed("Test Document"),
+            author: Cow::Borrowed("Test Author"),
+            created_at: Cow::Borrowed("2023-01-01"),
         };
 
         let chapter = Chapter {
-            id: "chapter_1".to_string(),
-            title: "Test Chapter".to_string(),
+            id: Cow::Borrowed("chapter_1"),
+            title: Cow::Borrowed("Test Chapter"),
             content: vec![],
         };
 
@@ -37,14 +38,14 @@ mod tests {
     fn test_content_block_creation() {
         let style = TextStyle {
             font_size: 12.0,
-            font_family: "Arial".to_string(),
+            font_family: Cow::Borrowed("Arial"),
             bold: false,
             italic: true,
         };
 
         let block = ContentBlock {
             block_type: ContentBlockType::Text,
-            content: "Hello, world!".to_string(),
+            content: Cow::Borrowed("Hello, world!"),
             styles: style.clone(),
             metrics: None,
         };
@@ -59,35 +60,35 @@ mod tests {
     fn test_content_block_types() {
         let style = TextStyle {
             font_size: 12.0,
-            font_family: "Arial".to_string(),
+            font_family: Cow::Borrowed("Arial"),
             bold: false,
             italic: false,
         };
 
         let text_block = ContentBlock {
             block_type: ContentBlockType::Text,
-            content: "Text content".to_string(),
+            content: Cow::Borrowed("Text content"),
             styles: style.clone(),
             metrics: None,
         };
 
         let title_block = ContentBlock {
             block_type: ContentBlockType::Title,
-            content: "Title content".to_string(),
+            content: Cow::Borrowed("Title content"),
             styles: style.clone(),
             metrics: None,
         };
 
         let image_block = ContentBlock {
             block_type: ContentBlockType::Image,
-            content: "Image content".to_string(),
+            content: Cow::Borrowed("Image content"),
             styles: style.clone(),
             metrics: None,
         };
 
         let blank_block = ContentBlock {
             block_type: ContentBlockType::Blank,
-            content: "".to_string(),
+            content: Cow::Borrowed(""),
             styles: style.clone(),
             metrics: None,
         };
@@ -103,7 +104,7 @@ mod tests {
     fn test_content_block_with_metrics() {
         let style = TextStyle {
             font_size: 12.0,
-            font_family: "Arial".to_string(),
+            font_family: Cow::Borrowed("Arial"),
             bold: false,
             italic: false,
         };
@@ -115,7 +116,7 @@ mod tests {
 
         let block = ContentBlock {
             block_type: ContentBlockType::Text,
-            content: "Text content".to_string(),
+            content: Cow::Borrowed("Text content"),
             styles: style,
             metrics: Some(metrics.clone()),
         };

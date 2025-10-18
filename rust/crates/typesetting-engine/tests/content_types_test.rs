@@ -66,14 +66,14 @@ fn test_style_handling() {
     // 目前样式处理比较简单，后续可以扩展
     let style1 = TextStyle {
         font_size: 12.0,
-        font_family: "Arial".to_string(),
+        font_family: "Arial".into(),
         bold: false,
         italic: false,
     };
     
     let style2 = TextStyle {
         font_size: 16.0,
-        font_family: "Times New Roman".to_string(),
+        font_family: "Times New Roman".into(),
         bold: true,
         italic: false,
     };

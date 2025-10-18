@@ -150,14 +150,19 @@ impl LayoutEngine {
         // 计算每页可以容纳的行数（基于字体大小和行高）
         let lines_per_page = (self.page_config.content_height() / (block.styles.font_size * 1.2)) as usize;
         
+        // 预分配容量以提高性能
+        let chunks_count = (lines.len() + lines_per_page - 1) / lines_per_page; // 向上取整
+        pages.reserve(chunks_count);
+        
         // 分批处理行
         for chunk in lines.chunks(lines_per_page) {
             let mut new_page = self.create_empty_page();
+            // 使用更高效的方式连接字符串
             let chunk_content = chunk.join("\n");
             
             let new_block = ContentBlock {
                 block_type: block.block_type.clone(),
-                content: chunk_content,
+                content: std::borrow::Cow::Owned(chunk_content),
                 styles: block.styles.clone(),
                 metrics: None,
             };

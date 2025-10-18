@@ -55,7 +55,7 @@ fn main() -> Result<()> {
             let content_preview = if block.content.chars().count() > 100 {
                 block.content.chars().take(100).collect::<String>() + "..."
             } else {
-                block.content.clone()
+                block.content.to_string()
             };
             println!("  Block {}: {:?} - {}", j + 1, block.block_type, content_preview);
         }

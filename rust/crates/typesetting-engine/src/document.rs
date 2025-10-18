@@ -2,17 +2,19 @@
 //! 
 //! 这个模块定义了排版引擎的核心数据结构，包括文档、章节、内容块等。
 
+use std::borrow::Cow;
+
 /// 文档元数据
 /// 
 /// 包含文档的基本信息，如标题、作者和创建时间
 #[derive(Debug, Clone, PartialEq)]
 pub struct DocumentMetadata {
     /// 文档标题
-    pub title: String,
+    pub title: Cow<'static, str>,
     /// 文档作者
-    pub author: String,
+    pub author: Cow<'static, str>,
     /// 创建时间（RFC3339格式）
-    pub created_at: String,
+    pub created_at: Cow<'static, str>,
 }
 
 /// 章节结构
@@ -21,9 +23,9 @@ pub struct DocumentMetadata {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Chapter {
     /// 章节唯一标识符
-    pub id: String,
+    pub id: Cow<'static, str>,
     /// 章节标题
-    pub title: String,
+    pub title: Cow<'static, str>,
     /// 章节内容块列表
     pub content: Vec<ContentBlock>,
 }
@@ -51,7 +53,7 @@ pub struct TextStyle {
     /// 字体大小（像素）
     pub font_size: f32,
     /// 字体族
-    pub font_family: String,
+    pub font_family: Cow<'static, str>,
     /// 是否粗体
     pub bold: bool,
     /// 是否斜体
@@ -66,7 +68,7 @@ pub struct ContentBlock {
     /// 内容块类型
     pub block_type: ContentBlockType,
     /// 内容文本
-    pub content: String,
+    pub content: Cow<'static, str>,
     /// 文本样式
     pub styles: TextStyle,
     /// 布局测量数据（可选）
