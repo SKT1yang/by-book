@@ -5,13 +5,17 @@
 use crate::document::{DocumentModel, DocumentMetadata, Chapter, ContentBlock, ContentBlockType, TextStyle};
 use std::mem;
 use std::borrow::Cow;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use regex::Regex;
 
 /// 解析引擎
 /// 
 /// 将各种格式的输入内容转换为统一的文档模型
-#[derive(Default)]
-pub struct ParserEngine;
+pub struct ParserEngine {
+    /// 章节缓存，用于存储已解析的章节以避免重复处理
+    chapter_cache: Arc<Mutex<HashMap<String, Chapter>>>,
+}
 
 impl ParserEngine {
     /// 创建一个新的解析引擎实例
@@ -20,7 +24,57 @@ impl ParserEngine {
     /// 
     /// 返回一个新的ParserEngine实例
     pub fn new() -> Self {
-        ParserEngine
+        ParserEngine {
+            chapter_cache: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    /// 创建一个新的解析引擎实例（带缓存）
+    /// 
+    /// # Arguments
+    /// 
+    /// * `chapter_cache` - 章节缓存
+    /// 
+    /// # Returns
+    /// 
+    /// 返回一个新的ParserEngine实例
+    pub fn with_cache(chapter_cache: Arc<Mutex<HashMap<String, Chapter>>>) -> Self {
+        ParserEngine {
+            chapter_cache,
+        }
+    }
+
+    /// 从缓存中获取章节
+    /// 
+    /// # Arguments
+    /// 
+    /// * `title` - 章节标题
+    /// 
+    /// # Returns
+    /// 
+    /// 如果缓存中存在该章节则返回Some(Chapter)，否则返回None
+    pub fn get_cached_chapter(&self, title: &str) -> Option<Chapter> {
+        let cache = self.chapter_cache.lock().unwrap();
+        cache.get(title).cloned()
+    }
+
+    /// 将章节添加到缓存中
+    /// 
+    /// # Arguments
+    /// 
+    /// * `chapter` - 要缓存的章节
+    pub fn cache_chapter(&self, chapter: Chapter) {
+        let mut cache = self.chapter_cache.lock().unwrap();
+        cache.insert(chapter.title.to_string(), chapter);
+    }
+
+    /// 获取缓存实例
+    /// 
+    /// # Returns
+    /// 
+    /// 返回缓存实例的Arc引用
+    pub fn get_cache(&self) -> Arc<Mutex<HashMap<String, Chapter>>> {
+        self.chapter_cache.clone()
     }
 
     /// 解析文本内容为文档模型
@@ -90,6 +144,9 @@ impl ParserEngine {
                         title: mem::take(&mut current_chapter_title), // 使用实际的章节标题
                         content: mem::take(&mut blocks),
                     };
+                    
+                    // 将章节添加到缓存
+                    self.cache_chapter(chapter.clone());
                     chapters.push(chapter);
                 } else if !chapters.is_empty() {
                     // 特殊情况：如果blocks为空但已有章节，说明是连续的章节标题
@@ -152,22 +209,33 @@ impl ParserEngine {
                 title: current_chapter_title,
                 content: blocks,
             };
+            
+            // 将章节添加到缓存
+            self.cache_chapter(chapter.clone());
             chapters.push(chapter);
         } else if chapters.is_empty() {
-            // 如果没有任何内容，创建一个默认章节
-            let block = ContentBlock {
-                block_type: ContentBlockType::Text,
-                content: Cow::Owned(content.to_string()),
-                styles: default_style.clone(),
-                metrics: None,
-            };
-            
-            let chapter = Chapter {
-                id: Cow::Borrowed("chapter_0"),
-                title: Cow::Borrowed("全文"),
-                content: vec![block],
-            };
-            chapters.push(chapter);
+            // 检查是否在缓存中存在"全文"章节
+            if let Some(cached_chapter) = self.get_cached_chapter("全文") {
+                chapters.push(cached_chapter);
+            } else {
+                // 如果没有任何内容，创建一个默认章节
+                let block = ContentBlock {
+                    block_type: ContentBlockType::Text,
+                    content: Cow::Owned(content.to_string()),
+                    styles: default_style.clone(),
+                    metrics: None,
+                };
+                
+                let chapter = Chapter {
+                    id: Cow::Borrowed("chapter_0"),
+                    title: Cow::Borrowed("全文"),
+                    content: vec![block],
+                };
+                
+                // 将章节添加到缓存
+                self.cache_chapter(chapter.clone());
+                chapters.push(chapter);
+            }
         }
         
         DocumentModel {

@@ -110,4 +110,23 @@ mod tests {
         assert_eq!(document.chapters[0].title, "English Chapter");
         assert_eq!(document.chapters[1].title, "第二章 中文标题");
     }
+    
+    /// 测试缓存功能
+    #[test]
+    fn test_chapter_caching() {
+        let content1 = "# Chapter 1\n\nContent of chapter 1.\n\n# Chapter 2\n\nContent of chapter 2.";
+        
+        let parser1 = ParserEngine::new();
+        let document1 = parser1.parse_txt(content1);
+        
+        // 使用同一个缓存的第二个解析器
+        let cache = parser1.get_cache();
+        let parser2 = ParserEngine::with_cache(cache);
+        let document2 = parser2.parse_txt(content1); // 解析相同内容
+        
+        // 确保两个文档具有相同的章节
+        assert_eq!(document1.chapters.len(), document2.chapters.len());
+        assert_eq!(document1.chapters[0].title, document2.chapters[0].title);
+        assert_eq!(document1.chapters[1].title, document2.chapters[1].title);
+    }
 }
