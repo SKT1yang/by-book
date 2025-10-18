@@ -12,6 +12,9 @@ const Reader: React.FC = () => {
   const navigate = useNavigate();
   const [rawContent, setRawContent] = useState("");
   const [pages, setPages] = useState<PageContent[]>([]);
+  const [chapters, setChapters] = useState<string[]>([]); // 章节列表
+  const [chapterPageMapping, setChapterPageMapping] = useState<Map<string, number>>(new Map()); // 章节到页面的映射
+  const [currentChapter, setCurrentChapter] = useState(0); // 当前章节索引
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,8 +39,24 @@ const Reader: React.FC = () => {
       const content = await invoke<string>("load_document", { filename });
       setRawContent(content);
       
-      // 使用排版引擎处理内容
-      const typesetResult = await invoke<string>("typeset_document", { content });
+      // 获取章节信息
+      const chapterList = await invoke<string[]>("parse_document_chapters", { content });
+      setChapters(chapterList);
+      
+      // 使用排版引擎处理内容并获取章节页面映射
+      const result = await invoke<[string, [string, number][]]>("typeset_document_with_chapter_info", { content });
+      const [typesetResult, chapterPageMap] = result;
+      
+      // 转换章节页面映射为Map对象
+      const chapterPageMapObj = new Map<string, number>();
+      const chapterTitles: string[] = [];
+      chapterPageMap.forEach(([title, page]) => {
+        chapterPageMapObj.set(title, page);
+        chapterTitles.push(title);
+      });
+      
+      setChapterPageMapping(chapterPageMapObj);
+      
       processTypesetResult(typesetResult);
       
       setError("");
@@ -111,6 +130,23 @@ const Reader: React.FC = () => {
     }
   };
 
+  // 切换章节
+  const handleChapterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const chapterIndex = parseInt(e.target.value);
+    setCurrentChapter(chapterIndex);
+    
+    // 获取章节标题
+    const chapterTitle = chapters[chapterIndex];
+    
+    // 根据章节页面映射跳转到对应的页面
+    if (chapterPageMapping.has(chapterTitle)) {
+      const pageNumber = chapterPageMapping.get(chapterTitle)!;
+      // 确保页码在有效范围内
+      const validPageNumber = Math.min(Math.max(0, pageNumber), pages.length - 1);
+      setCurrentPage(validPageNumber);
+    }
+  };
+
   if (loading) {
     return <div className="reader">加载中...</div>;
   }
@@ -137,6 +173,19 @@ const Reader: React.FC = () => {
           </button>
         </div>
       </div>
+      
+      {/* 章节导航栏 */}
+      {chapters.length > 0 && (
+        <div className="chapter-navigation">
+          <select value={currentChapter} onChange={handleChapterChange}>
+            {chapters.map((chapter, index) => (
+              <option key={index} value={index}>
+                {chapter}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       
       {pages.length > 0 ? (
         <div 

@@ -5,6 +5,68 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
+fn parse_document_chapters(content: &str) -> Result<Vec<String>, String> {
+    use typesetting_engine::ParserEngine;
+    
+    // 创建解析引擎
+    let parser = ParserEngine::new();
+    
+    // 解析文档
+    let document = parser.parse_txt(content);
+    
+    // 提取章节标题
+    let chapter_titles: Vec<String> = document.chapters
+        .iter()
+        .map(|chapter| chapter.title.clone())
+        .collect();
+    
+    Ok(chapter_titles)
+}
+
+#[tauri::command]
+fn typeset_document_with_chapter_info(content: &str) -> Result<(String, Vec<(String, usize)>), String> {
+    use typesetting_engine::{ParserEngine, LayoutEngine, PageConfig, Page};
+    
+    // 创建解析引擎
+    let parser = ParserEngine::new();
+    
+    // 解析文档
+    let document = parser.parse_txt(content);
+    
+    // 创建布局引擎
+    let page_config = PageConfig {
+        width: 800.0,  // 增大页面宽度
+        height: 1000.0, // 增大页面高度
+        margin_top: 40.0,
+        margin_bottom: 40.0,
+        margin_left: 40.0,
+        margin_right: 40.0,
+    };
+    let layout_engine = LayoutEngine::new(page_config);
+    
+    // 布局文档
+    let pages: Vec<Page> = layout_engine.layout_document(&document);
+    
+    // 简化处理：平均分配页面给章节
+    let mut chapter_page_mapping: Vec<(String, usize)> = Vec::new();
+    let pages_per_chapter = if document.chapters.is_empty() {
+        0
+    } else {
+        pages.len() / document.chapters.len()
+    };
+    
+    for (index, chapter) in document.chapters.iter().enumerate() {
+        let start_page = index * pages_per_chapter;
+        chapter_page_mapping.push((chapter.title.clone(), start_page));
+    }
+    
+    // 在Tauri应用中实现自己的渲染逻辑
+    let rendered = render_pages_for_tauri(&pages);
+    
+    Ok((rendered, chapter_page_mapping))
+}
+
+#[tauri::command]
 fn typeset_document(content: &str) -> Result<String, String> {
     use typesetting_engine::{ParserEngine, LayoutEngine, PageConfig, Page};
     
@@ -310,6 +372,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet, 
             typeset_document,
+            typeset_document_with_chapter_info,
+            parse_document_chapters,
             save_document,
             load_document,
             delete_document,
