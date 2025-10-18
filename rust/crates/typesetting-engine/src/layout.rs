@@ -3,6 +3,8 @@
 //! 负责计算内容在页面上的具体位置和分页逻辑
 
 use crate::document::{DocumentModel, ContentBlock, LayoutMetrics};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 /// 页面配置
 /// 
@@ -41,6 +43,18 @@ impl PageConfig {
     pub fn content_height(&self) -> f32 {
         self.height - self.margin_top - self.margin_bottom
     }
+    
+    /// 生成用于缓存的键
+    /// 
+    /// # Returns
+    /// 
+    /// 返回表示配置的字符串键
+    pub fn cache_key(&self) -> String {
+        format!("{}-{}-{}-{}-{}-{}", 
+            self.width, self.height, 
+            self.margin_top, self.margin_bottom, 
+            self.margin_left, self.margin_right)
+    }
 }
 
 /// 页面结构
@@ -60,6 +74,8 @@ pub struct Page {
 pub struct LayoutEngine {
     /// 页面配置
     page_config: PageConfig,
+    /// 页面缓存，用于存储已布局的页面以避免重复计算
+    page_cache: Arc<Mutex<HashMap<String, Vec<Page>>>>,
 }
 
 impl LayoutEngine {
@@ -73,7 +89,121 @@ impl LayoutEngine {
     /// 
     /// 返回一个新的LayoutEngine实例
     pub fn new(page_config: PageConfig) -> Self {
-        LayoutEngine { page_config }
+        LayoutEngine { 
+            page_config,
+            page_cache: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    /// 从缓存中获取页面
+    /// 
+    /// # Arguments
+    /// 
+    /// * `cache_key` - 缓存键
+    /// 
+    /// # Returns
+    /// 
+    /// 如果缓存中存在页面则返回Some(Vec<Page>)，否则返回None
+    pub fn get_cached_pages(&self, cache_key: &str) -> Option<Vec<Page>> {
+        let cache = self.page_cache.lock().unwrap();
+        cache.get(cache_key).cloned()
+    }
+
+    /// 将页面添加到缓存中
+    /// 
+    /// # Arguments
+    /// 
+    /// * `cache_key` - 缓存键
+    /// * `pages` - 要缓存的页面
+    pub fn cache_pages(&self, cache_key: String, pages: Vec<Page>) {
+        let mut cache = self.page_cache.lock().unwrap();
+        cache.insert(cache_key, pages);
+    }
+
+    /// 为文档生成缓存键
+    /// 
+    /// # Arguments
+    /// 
+    /// * `document` - 文档模型
+    /// 
+    /// # Returns
+    /// 
+    /// 返回文档的缓存键
+    fn generate_cache_key(&self, document: &DocumentModel) -> String {
+        // 基于文档内容和页面配置生成缓存键
+        let mut key = self.page_config.cache_key();
+        for chapter in &document.chapters {
+            key.push_str(&format!("{}{}", chapter.id, chapter.title));
+        }
+        key
+    }
+
+    /// 布局文档的特定章节
+    /// 
+    /// 将文档模型的指定章节按照页面配置进行布局，生成页面列表
+    /// 
+    /// # Arguments
+    /// 
+    /// * `document` - 需要布局的文档模型
+    /// * `chapter_index` - 章节索引
+    /// 
+    /// # Returns
+    /// 
+    /// 返回布局后的页面列表
+    pub fn layout_document_chapter(&self, document: &DocumentModel, chapter_index: usize) -> Vec<Page> {
+        if chapter_index >= document.chapters.len() {
+            return vec![];
+        }
+
+        // 为章节生成缓存键
+        let cache_key = format!("{}-chapter-{}", self.generate_cache_key(document), chapter_index);
+        
+        // 检查缓存
+        if let Some(cached_pages) = self.get_cached_pages(&cache_key) {
+            return cached_pages;
+        }
+
+        let mut pages: Vec<Page> = Vec::new();
+        let mut current_page = self.create_empty_page();
+        let chapter = &document.chapters[chapter_index];
+        
+        for block in &chapter.content {
+            // 测量块的尺寸
+            let block_metrics = self.measure_block(block);
+            
+            // 检查当前页是否能容纳这个块
+            if self.can_fit_in_page(&block_metrics, &current_page) {
+                // 可以容纳，添加到当前页
+                current_page.used_height += block_metrics.height;
+                current_page.blocks.push(block.clone());
+            } else {
+                // 无法容纳，保存当前页并创建新页
+                if !current_page.blocks.is_empty() {
+                    pages.push(current_page);
+                }
+                current_page = self.create_empty_page();
+                
+                // 如果块太大无法适应空页面，需要拆分内容
+                if block_metrics.height > self.page_config.content_height() {
+                    // 对于过大的块进行拆分处理
+                    self.layout_large_block(block, &mut pages);
+                } else {
+                    // 添加块到新页
+                    current_page.used_height += block_metrics.height;
+                    current_page.blocks.push(block.clone());
+                }
+            }
+        }
+        
+        // 添加最后一页（如果有内容）
+        if !current_page.blocks.is_empty() {
+            pages.push(current_page);
+        }
+        
+        // 缓存结果
+        self.cache_pages(cache_key, pages.clone());
+        
+        pages
     }
 
     /// 布局文档
@@ -88,6 +218,14 @@ impl LayoutEngine {
     /// 
     /// 返回布局后的页面列表
     pub fn layout_document(&self, document: &DocumentModel) -> Vec<Page> {
+        // 生成缓存键
+        let cache_key = self.generate_cache_key(document);
+        
+        // 检查缓存
+        if let Some(cached_pages) = self.get_cached_pages(&cache_key) {
+            return cached_pages;
+        }
+
         let mut pages: Vec<Page> = Vec::new();
         let mut current_page = self.create_empty_page();
         
@@ -132,6 +270,9 @@ impl LayoutEngine {
         if !current_page.blocks.is_empty() {
             pages.push(current_page);
         }
+        
+        // 缓存结果
+        self.cache_pages(cache_key, pages.clone());
         
         pages
     }

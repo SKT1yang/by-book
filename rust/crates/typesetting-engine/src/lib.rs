@@ -35,3 +35,26 @@ pub use layout::*;
 pub mod prelude {
     pub use anyhow::Result;
 }
+
+/// 按需加载和布局特定章节
+/// 
+/// # Arguments
+/// 
+/// * `content` - 文档内容
+/// * `chapter_index` - 章节索引
+/// * `page_config` - 页面配置
+/// 
+/// # Returns
+/// 
+/// 返回布局后的页面列表
+pub fn layout_chapter_on_demand(
+    content: &str, 
+    chapter_index: usize, 
+    page_config: layout::PageConfig
+) -> Vec<layout::Page> {
+    let parser = ParserEngine::new();
+    let document = parser.parse_txt_chapter(content, chapter_index);
+    
+    let layout_engine = LayoutEngine::new(page_config);
+    layout_engine.layout_document_chapter(&document, 0) // 章节文档中的索引始终是0
+}

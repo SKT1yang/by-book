@@ -199,7 +199,7 @@ fn load_chapter_content_with_offset(content: &str, chapter_index: usize) -> Resu
         margin_left: 40.0,
         margin_right: 40.0,
     };
-    let layout_engine = LayoutEngine::new(page_config);
+    let layout_engine = LayoutEngine::new(page_config.clone());
     
     // 计算章节起始页码和总页数
     let mut start_page_index = 0;
@@ -226,18 +226,8 @@ fn load_chapter_content_with_offset(content: &str, chapter_index: usize) -> Resu
         total_page_count += pages.len();
     }
     
-    // 获取特定章节
-    let chapter = &document.chapters[chapter_index];
-    
-    // 创建只包含一个章节的文档
-    let single_chapter_document = typesetting_engine::DocumentModel {
-        metadata: document.metadata.clone(),
-        chapters: vec![chapter.clone()],
-        styles: document.styles.clone(),
-    };
-    
-    // 布局单个章节
-    let pages: Vec<Page> = layout_engine.layout_document(&single_chapter_document);
+    // 使用新的按需加载功能获取章节内容
+    let pages = typesetting_engine::layout_chapter_on_demand(content, chapter_index, page_config);
     
     // 渲染页面
     let rendered = render_pages_for_tauri(&pages);

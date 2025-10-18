@@ -77,9 +77,57 @@ impl ParserEngine {
         self.chapter_cache.clone()
     }
 
-    /// 解析文本内容为文档模型
+    /// 解析特定章节的文本内容
     /// 
-    /// 将输入的文本内容解析为DocumentModel结构
+    /// 将输入的文本内容解析为DocumentModel结构，只包含指定章节
+    /// 
+    /// # Arguments
+    /// 
+    /// * `content` - 需要解析的文本内容
+    /// * `chapter_index` - 要解析的章节索引
+    /// 
+    /// # Returns
+    /// 
+    /// 返回解析后的DocumentModel实例，只包含指定章节
+    pub fn parse_txt_chapter(&self, content: &str, chapter_index: usize) -> DocumentModel {
+        let all_chapters = self.parse_all_chapters(content);
+        
+        if chapter_index < all_chapters.len() {
+            let chapter = all_chapters[chapter_index].clone();
+            DocumentModel {
+                metadata: DocumentMetadata {
+                    title: Cow::Borrowed("Sample Document"),
+                    author: Cow::Borrowed("Unknown"),
+                    created_at: Cow::Owned(chrono::Utc::now().to_rfc3339()),
+                },
+                chapters: vec![chapter],
+                styles: vec![TextStyle {
+                    font_size: 16.0,
+                    font_family: Cow::Borrowed("Arial"),
+                    bold: false,
+                    italic: false,
+                }],
+            }
+        } else {
+            // 如果索引超出范围，返回空文档
+            DocumentModel {
+                metadata: DocumentMetadata {
+                    title: Cow::Borrowed("Sample Document"),
+                    author: Cow::Borrowed("Unknown"),
+                    created_at: Cow::Owned(chrono::Utc::now().to_rfc3339()),
+                },
+                chapters: vec![],
+                styles: vec![TextStyle {
+                    font_size: 16.0,
+                    font_family: Cow::Borrowed("Arial"),
+                    bold: false,
+                    italic: false,
+                }],
+            }
+        }
+    }
+
+    /// 解析所有章节但不进行缓存
     /// 
     /// # Arguments
     /// 
@@ -87,8 +135,8 @@ impl ParserEngine {
     /// 
     /// # Returns
     /// 
-    /// 返回解析后的DocumentModel实例
-    pub fn parse_txt(&self, content: &str) -> DocumentModel {
+    /// 返回解析后的章节列表
+    fn parse_all_chapters(&self, content: &str) -> Vec<Chapter> {
         // 按行分割内容
         let lines: Vec<&str> = content.lines().collect();
         
@@ -145,8 +193,6 @@ impl ParserEngine {
                         content: mem::take(&mut blocks),
                     };
                     
-                    // 将章节添加到缓存
-                    self.cache_chapter(chapter.clone());
                     chapters.push(chapter);
                 } else if !chapters.is_empty() {
                     // 特殊情况：如果blocks为空但已有章节，说明是连续的章节标题
@@ -210,32 +256,45 @@ impl ParserEngine {
                 content: blocks,
             };
             
-            // 将章节添加到缓存
-            self.cache_chapter(chapter.clone());
             chapters.push(chapter);
         } else if chapters.is_empty() {
-            // 检查是否在缓存中存在"全文"章节
-            if let Some(cached_chapter) = self.get_cached_chapter("全文") {
-                chapters.push(cached_chapter);
-            } else {
-                // 如果没有任何内容，创建一个默认章节
-                let block = ContentBlock {
-                    block_type: ContentBlockType::Text,
-                    content: Cow::Owned(content.to_string()),
-                    styles: default_style.clone(),
-                    metrics: None,
-                };
-                
-                let chapter = Chapter {
-                    id: Cow::Borrowed("chapter_0"),
-                    title: Cow::Borrowed("全文"),
-                    content: vec![block],
-                };
-                
-                // 将章节添加到缓存
-                self.cache_chapter(chapter.clone());
-                chapters.push(chapter);
-            }
+            // 如果没有任何内容，创建一个默认章节
+            let block = ContentBlock {
+                block_type: ContentBlockType::Text,
+                content: Cow::Owned(content.to_string()),
+                styles: default_style.clone(),
+                metrics: None,
+            };
+            
+            let chapter = Chapter {
+                id: Cow::Borrowed("chapter_0"),
+                title: Cow::Borrowed("全文"),
+                content: vec![block],
+            };
+            
+            chapters.push(chapter);
+        }
+        
+        chapters
+    }
+
+    /// 解析文本内容为文档模型
+    /// 
+    /// 将输入的文本内容解析为DocumentModel结构
+    /// 
+    /// # Arguments
+    /// 
+    /// * `content` - 需要解析的文本内容
+    /// 
+    /// # Returns
+    /// 
+    /// 返回解析后的DocumentModel实例
+    pub fn parse_txt(&self, content: &str) -> DocumentModel {
+        let chapters = self.parse_all_chapters(content);
+        
+        // 缓存所有章节
+        for chapter in &chapters {
+            self.cache_chapter(chapter.clone());
         }
         
         DocumentModel {
@@ -245,7 +304,12 @@ impl ParserEngine {
                 created_at: Cow::Owned(chrono::Utc::now().to_rfc3339()),
             },
             chapters,
-            styles: vec![default_style], // 这里仍然需要克隆，因为DocumentModel拥有样式
+            styles: vec![TextStyle {
+                font_size: 16.0,
+                font_family: Cow::Borrowed("Arial"),
+                bold: false,
+                italic: false,
+            }],
         }
     }
 }
