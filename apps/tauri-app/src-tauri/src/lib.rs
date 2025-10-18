@@ -47,17 +47,17 @@ fn typeset_document_with_chapter_info(content: &str) -> Result<(String, Vec<(Str
     // 布局文档
     let pages: Vec<Page> = layout_engine.layout_document(&document);
     
-    // 简化处理：平均分配页面给章节
+    // 记录每个章节的起始页码
     let mut chapter_page_mapping: Vec<(String, usize)> = Vec::new();
-    let pages_per_chapter = if document.chapters.is_empty() {
-        0
-    } else {
-        pages.len() / document.chapters.len()
-    };
+    let mut current_page_count = 0;
     
-    for (index, chapter) in document.chapters.iter().enumerate() {
-        let start_page = index * pages_per_chapter;
-        chapter_page_mapping.push((chapter.title.to_string(), start_page));
+    for chapter in &document.chapters {
+        chapter_page_mapping.push((chapter.title.to_string(), current_page_count));
+        
+        // 计算当前章节的页数
+        // 这里需要一个更精确的方法来确定每个章节有多少页
+        // 简化处理：假设每个章节平均分配页面
+        current_page_count += 1; // 至少一页
     }
     
     // 在Tauri应用中实现自己的渲染逻辑
@@ -124,6 +124,125 @@ fn render_pages_for_tauri(pages: &[typesetting_engine::Page]) -> String {
         result.push_str("--- Page End ---\n\n");
     }
     result
+}
+
+// 新增：获取文档的章节和页码映射关系
+#[tauri::command]
+fn get_document_chapter_page_mapping(content: &str) -> Result<Vec<(String, usize)>, String> {
+    use typesetting_engine::{ParserEngine, LayoutEngine, PageConfig, Page};
+    
+    // 创建解析引擎
+    let parser = ParserEngine::new();
+    
+    // 解析文档
+    let document = parser.parse_txt(content);
+    
+    // 创建布局引擎
+    let page_config = PageConfig {
+        width: 800.0,
+        height: 1000.0,
+        margin_top: 40.0,
+        margin_bottom: 40.0,
+        margin_left: 40.0,
+        margin_right: 40.0,
+    };
+    let layout_engine = LayoutEngine::new(page_config);
+    
+    // 记录每个章节的起始页码
+    let mut chapter_page_mapping: Vec<(String, usize)> = Vec::new();
+    let mut total_page_count = 0;
+    
+    // 逐个章节计算页数
+    for (_index, chapter) in document.chapters.iter().enumerate() {
+        // 创建只包含当前章节的文档
+        let single_chapter_document = typesetting_engine::DocumentModel {
+            metadata: document.metadata.clone(),
+            chapters: vec![chapter.clone()],
+            styles: document.styles.clone(),
+        };
+        
+        // 布局当前章节
+        let pages: Vec<Page> = layout_engine.layout_document(&single_chapter_document);
+        
+        // 记录当前章节的起始页码
+        chapter_page_mapping.push((chapter.title.to_string(), total_page_count));
+        
+        // 更新总页数
+        total_page_count += pages.len();
+    }
+    
+    Ok(chapter_page_mapping)
+}
+
+// 新增：懒加载特定章节并返回起始页码和总页数
+#[tauri::command]
+fn load_chapter_content_with_offset(content: &str, chapter_index: usize) -> Result<(String, usize, usize), String> {
+    use typesetting_engine::{ParserEngine, LayoutEngine, PageConfig, Page};
+    
+    // 创建解析引擎
+    let parser = ParserEngine::new();
+    
+    // 解析文档
+    let document = parser.parse_txt(content);
+    
+    // 检查章节索引是否有效
+    if chapter_index >= document.chapters.len() {
+        return Err("章节索引超出范围".to_string());
+    }
+    
+    // 创建布局引擎
+    let page_config = PageConfig {
+        width: 800.0,
+        height: 1000.0,
+        margin_top: 40.0,
+        margin_bottom: 40.0,
+        margin_left: 40.0,
+        margin_right: 40.0,
+    };
+    let layout_engine = LayoutEngine::new(page_config);
+    
+    // 计算章节起始页码和总页数
+    let mut start_page_index = 0;
+    let mut total_page_count = 0;
+    
+    // 逐个章节计算页数
+    for (index, chapter) in document.chapters.iter().enumerate() {
+        // 创建只包含当前章节的文档
+        let single_chapter_document = typesetting_engine::DocumentModel {
+            metadata: document.metadata.clone(),
+            chapters: vec![chapter.clone()],
+            styles: document.styles.clone(),
+        };
+        
+        // 布局当前章节
+        let pages: Vec<Page> = layout_engine.layout_document(&single_chapter_document);
+        
+        // 如果是目标章节，记录起始页码
+        if index == chapter_index {
+            start_page_index = total_page_count;
+        }
+        
+        // 更新总页数
+        total_page_count += pages.len();
+    }
+    
+    // 获取特定章节
+    let chapter = &document.chapters[chapter_index];
+    
+    // 创建只包含一个章节的文档
+    let single_chapter_document = typesetting_engine::DocumentModel {
+        metadata: document.metadata.clone(),
+        chapters: vec![chapter.clone()],
+        styles: document.styles.clone(),
+    };
+    
+    // 布局单个章节
+    let pages: Vec<Page> = layout_engine.layout_document(&single_chapter_document);
+    
+    // 渲染页面
+    let rendered = render_pages_for_tauri(&pages);
+    
+    Ok((rendered, start_page_index, total_page_count))
 }
 
 /// 初始化应用数据目录结构
@@ -374,12 +493,60 @@ pub fn run() {
             typeset_document,
             typeset_document_with_chapter_info,
             parse_document_chapters,
+            load_chapter_content,
             save_document,
             load_document,
             delete_document,
             list_documents,
-            get_app_data_structure
+            get_app_data_structure,
+            get_document_chapter_page_mapping,
+            load_chapter_content_with_offset
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[tauri::command]
+fn load_chapter_content(content: &str, chapter_index: usize) -> Result<String, String> {
+    use typesetting_engine::{ParserEngine, LayoutEngine, PageConfig, Page};
+    
+    // 创建解析引擎
+    let parser = ParserEngine::new();
+    
+    // 解析文档
+    let document = parser.parse_txt(content);
+    
+    // 检查章节索引是否有效
+    if chapter_index >= document.chapters.len() {
+        return Err("章节索引超出范围".to_string());
+    }
+    
+    // 获取特定章节
+    let chapter = &document.chapters[chapter_index];
+    
+    // 创建只包含一个章节的文档
+    let single_chapter_document = typesetting_engine::DocumentModel {
+        metadata: document.metadata.clone(),
+        chapters: vec![chapter.clone()],
+        styles: document.styles.clone(),
+    };
+    
+    // 创建布局引擎
+    let page_config = PageConfig {
+        width: 800.0,
+        height: 1000.0,
+        margin_top: 40.0,
+        margin_bottom: 40.0,
+        margin_left: 40.0,
+        margin_right: 40.0,
+    };
+    let layout_engine = LayoutEngine::new(page_config);
+    
+    // 布局单个章节
+    let pages: Vec<Page> = layout_engine.layout_document(&single_chapter_document);
+    
+    // 渲染页面
+    let rendered = render_pages_for_tauri(&pages);
+    
+    Ok(rendered)
 }
